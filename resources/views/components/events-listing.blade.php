@@ -51,7 +51,7 @@
                         <div class="mt-4 flex items-center justify-between gap-4">
                             <p class="text-2xl font-extrabold leading-tight text-gray-900 dark:text-white">$1,699</p>
 
-                            <button type="button" class="bookbtn inline-flex items-center rounded-lg bg-[#1b1b18] px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4  focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                            <button type="button" onclick="bookTicket({{json_encode($event)}})" class="bookbtn inline-flex items-center rounded-lg bg-[#1b1b18] px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4  focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
                                 <svg class="-ms-2 me-2 h-5 w-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h1.5L8 16m0 0h8m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm.75-3H7.5M11 7H6.312M17 4v6m-3-3h6" />
                                 </svg>
@@ -71,32 +71,89 @@
         <div id="myModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
             <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
                 <button id="closeModalBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black text-2xl">&times;</button>
-                <h2 class="text-xl font-bold mb-4">Book Event Ticket</h2>
-                <div class="bg-white p-6 rounded-lg w-full max-w-md relative">
-                    <h2 class="text-xl font-bold mb-4">Book This Tour</h2>
-                    <form>
+                <h2 class="text-xl font-bold mb-4">Event Details</h2>
+                <div class="mb-4">
+                    <label class="font-bold mb-4">Event Title:</label>
+                    <p class="text-gray-900" id='event_title'>Live Music Night</p>
+                </div>
+                <div class="mb-4">
+                    <label class="font-bold mb-4">Event Date:</label>
+                    <p class="text-gray-900" id='event_date'>2025-05-10</p>
+                </div>
+                <div class="mb-4">
+                    <label class="font-bold mb-4">Venue:</label>
+                    <p class="text-gray-900" id='event_venue'>City Hall Auditorium</p>
+                </div>
+                <div class="mb-4">
+                    <label class="font-bold mb-4">Venue Address:</label>
+                    <p class="text-gray-900" id='event_venue_address'>123 Main Street, New York, NY</p>
+                </div>
+                <form>
+                    <div class="bg-white p-6 rounded-lg w-full max-w-md relative">
                         <label class="block mb-2 font-medium">Enter Number of Seats</label>
-                        <input type="number" class="w-full border border-gray-300 rounded px-3 py-2 mb-4" placeholder="Ex: 2" />
-                    </form>
-                </div>
-                <div class="flex justify-between">
-                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Confirm Booking</button>
-                    <button id="closeModalBtn2" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition">Close</button>
-                </div>
+                        <input type="hidden" name='event_id' id="event_id" value="123" />
+                        <input type="number" name="seats" required class="w-full border border-gray-300 rounded px-3 py-2 mb-4" placeholder="Ex: 2" />
+                    </div>
+                    <div class="flex justify-between">
+                        <button type="submit" onclick="saveBookingData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Confirm Booking</button>
+                        <button id="closeModalBtn2" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition">Close</button>
+                    </div>
+                </form>
             </div>
         </div>
 
     </section>
     <!-- JavaScript -->
     <script>
-        // function bookTicket(){}
+        function bookTicket(eventData) {
+            console.log(eventData);
+            const modal = document.getElementById('myModal');
+            modal.classList.remove('hidden')
+
+            document.getElementById('event_title').textContent = eventData.name;
+            document.getElementById('event_date').textContent = eventData.date;
+            document.getElementById('event_venue').textContent = eventData.venue.address;
+            document.getElementById('event_venue_address').textContent = eventData.venue.address;
+            document.getElementById('event_id').value = eventData.id;
+
+        }
         const modal = document.getElementById('myModal');
-        // const openBtn = document.getElementById('openModalBtn');
         const openBtns = document.getElementsByClassName('bookbtn');
-        Array.from(openBtns).forEach(btn =>
-            btn.addEventListener('click', () => modal.classList.remove('hidden'))
-        );
         const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
         closeBtns.forEach(btn => btn.addEventListener('click', () => modal.classList.add('hidden')));
     </script>
+    <script>
+        function saveBookingData() {
+            event.preventDefault();
+
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+
+            // If you want to ensure hidden fields are included (like event_id):
+            // formData.append('event_id', document.getElementById('event_id').value);
+
+
+            // Send form data via AJAX using Fetch
+            fetch("{{route('event.create')}}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                     credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    alert("Booking saved!");
+                    document.getElementById('myModal').classList.add('hidden')
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Something went wrong.");
+                });
+        }
+    </script>
+
 </div>
