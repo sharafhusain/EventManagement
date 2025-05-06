@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                @if(auth()->user()->role == 'admin')
+                @if(auth()->user()?->role == 'admin')
                 @include('layouts.admin_nav')                
                 @else
                 @include('layouts.user_nav')
