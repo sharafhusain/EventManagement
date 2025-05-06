@@ -138,15 +138,18 @@
                     method: 'POST',
                     body: formData,
                     headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
-                     credentials: 'include'
+                    credentials: 'include'
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
-                    alert("Booking saved!");
+                    Swal.fire({
+                        title: "Ticket Booked Successfully.",
+                        icon: "success",
+                        draggable: true
+                    });
                     document.getElementById('myModal').classList.add('hidden')
                 })
                 .catch(error => {
