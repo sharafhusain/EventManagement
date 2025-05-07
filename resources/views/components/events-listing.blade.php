@@ -19,7 +19,8 @@
                     </div>
                     <div class="pt-6">
                         <a href="#" class="text-lg font-semibold leading-tight text-gray-900 hover:underline dark:text-white">{{$event->name}}</a>
-                        <p href="#" class=" text-gray-900 hover:underline dark:text-white">{{$event->description}}</p>
+                        <p class="text-gray-900 hover:underline dark:text-white">{{$event->description}}</p>
+                        <p class="text-gray-900 hover:underline dark:text-white">Available Seats: <span id="available-seat-{{$event->id}}">{{$event->available_seat()}}</span></p>
                         <div class="mt-4 flex items-center justify-between gap-4">
                             <p class="text-2xl font-extrabold leading-tight text-gray-900 dark:text-white">${{$event->price_per_seat}}</p>
                             <button type="button" onclick="bookTicket({{json_encode($event)}})" class="bookbtn inline-flex items-center rounded-lg bg-[#1b1b18] px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4  focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
@@ -45,28 +46,32 @@
                 <h2 class="text-xl font-bold mb-4">Event Details</h2>
                 <div class="mb-4">
                     <label class="font-bold mb-4">Event Title:</label>
-                    <p class="text-gray-900" id='event_title'>Live Music Night</p>
+                    <p class="text-gray-900" id='event_title'></p>
                 </div>
                 <div class="mb-4">
                     <label class="font-bold mb-4">Event Date:</label>
-                    <p class="text-gray-900" id='event_date'>2025-05-10</p>
+                    <p class="text-gray-900" id='event_date'></p>
+                </div>
+                <div class="mb-4">
+                    <label class="font-bold mb-4">Ticket Price:</label>
+                    <p class="text-gray-900" id='event_ticket_price'></p>
                 </div>
                 <div class="mb-4">
                     <label class="font-bold mb-4">Venue:</label>
-                    <p class="text-gray-900" id='event_venue'>City Hall Auditorium</p>
+                    <p class="text-gray-900" id='event_venue'></p>
                 </div>
                 <div class="mb-4">
                     <label class="font-bold mb-4">Venue Address:</label>
-                    <p class="text-gray-900" id='event_venue_address'>123 Main Street, New York, NY</p>
+                    <p class="text-gray-900" id='event_venue_address'></p>
                 </div>
-                <form>
+                <form onsubmit="(e)=> event.preventDefault()">
                     <div class="bg-white p-6 rounded-lg w-full max-w-md relative">
                         <label class="block mb-2 font-medium">Enter Number of Seats</label>
                         <input type="hidden" name='event_id' id="event_id" value="123" />
-                        <input type="number" name="seats" value="1" required class="w-full border border-gray-300 rounded px-3 py-2 mb-4" placeholder="Ex: 2" />
+                        <input type="number" name="seats" onkeyup="updatePriceLabel()" value="1" required class="w-full border border-gray-300 rounded px-3 py-2 mb-4" placeholder="Ex: 2" />
                     </div>
                     <div class="flex justify-between">
-                        <button type="submit" onclick="saveBookingData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Confirm Booking</button>
+                        <button type="submit" onclick="saveBookingData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Process to payment: <span id="payment-amount"></span></button>
                         <button id="closeModalBtn2" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition">Close</button>
                     </div>
                 </form>
@@ -80,15 +85,11 @@
             let isLoggedIn = {{ auth()->check() ? 'true' : 'false' }};
 
             if(!isLoggedIn){
-                // Swal.fire("Pleaase Login to Book Tickets.");
                 Swal.fire({
                         title: "Pleaase Login to Book Tickets.",
-                        // showDenyButton: true,
                         showCancelButton: true,
                         confirmButtonText: "Login",
-                        // denyButtonText: `Don't save`
                         }).then((result) => {
-                        /* Read more about isConfirmed, isDenied below */
                         if (result.isConfirmed) {
                            window.location = '{{route('login')}}'
                         }
@@ -97,31 +98,46 @@
             }
             console.log(eventData);
             document.getElementById('myModal').classList.remove('hidden')
-
             document.getElementById('event_title').textContent = eventData.name;
             document.getElementById('event_date').textContent = eventData.date;
+            document.getElementById('event_ticket_price').textContent = eventData.price_per_seat;
             document.getElementById('event_venue').textContent = eventData.venue.address;
             document.getElementById('event_venue_address').textContent = eventData.venue.address;
             document.getElementById('event_id').value = eventData.id;
+            document.getElementById('payment-amount').textContent = eventData.price_per_seat;
 
         }
         const modal = document.getElementById('myModal');
         const openBtns = document.getElementsByClassName('bookbtn');
         const closeBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
         closeBtns.forEach(btn => btn.addEventListener('click', () => modal.classList.add('hidden')));
-    </script>
-    <script>
+    
+        
+        function updatePriceLabel() {
+            let seatInput = document.querySelector("input[name='seats']");
+            let seatCount = parseInt(seatInput.value) || 0;
+
+            let pricePerSeat = parseFloat(document.getElementById('event_ticket_price')?.textContent) || 0;
+            let totalPrice = seatCount * pricePerSeat;
+            console.log(
+                'hello',
+                seatCount,
+                pricePerSeat,
+                totalPrice);
+            
+            document.getElementById('payment-amount').textContent = totalPrice.toFixed(2); // or .textContent for labels
+        }
         function saveBookingData() {
             event.preventDefault();
 
             const form = document.querySelector('form');
             const formData = new FormData(form);
+            const eventId = formData.get('event_id');
+            const seats = parseInt(formData.get('seats'));
 
-            // If you want to ensure hidden fields are included (like event_id):
-            // formData.append('event_id', document.getElementById('event_id').value);
+            console.log(seats,'seats');
+            
 
-
-            // Send form data via AJAX using Fetch
             fetch("{{route('event.create')}}", {
                     method: 'POST',
                     body: formData,
@@ -133,18 +149,42 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log(data);
+                    if(data.status == 'error'){
+                        showValidationErrors(data.errors)
+                        return
+                    }
                     Swal.fire({
                         title: "Ticket Booked Successfully.",
                         icon: "success",
                         draggable: true
                     });
                     document.getElementById('myModal').classList.add('hidden')
+                    let totalSeats = parseInt(document.getElementById('available-seat-'+eventId).textContent)
+                    document.getElementById('available-seat-'+eventId).textContent = totalSeats-seats
+                    
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert("Something went wrong.");
                 });
         }
+        function showValidationErrors(errors) {
+    let messages = [];
+    for (const field in errors) {
+        if (Array.isArray(errors[field])) {
+            messages.push(...errors[field]);
+        }
+    }
+
+    if (messages.length) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Validation Error',
+            html: messages.map(msg => `<p>${msg}</p>`).join('')
+        });
+    }
+}
     </script>
 
 </div>

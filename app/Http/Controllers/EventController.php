@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
@@ -29,11 +30,27 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'event_id' => 'required|exists:events,id',
-            'seats' => 'required|integer|min:1',
+        $event = Event::findOrFail($request->event_id);
+
+        $validator = Validator::make($request->all(), [
+            'seats' => [
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) use ($event) {
+                    if ($value > $event->available_seat()) {
+                        $fail("Only {$event->available_seat()} seats are available.");
+                    }
+                }
+            ],
         ]);
-        $event = Event::find($request->event_id);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
         $booking = Booking::create([
             'user_id' => auth()->id(),
             'event_id' => $request->event_id,
@@ -43,6 +60,7 @@ class EventController extends Controller
             'booked_at' => now(),
         ]);
         return response()->json([
+            'status' => 'ok',
             'message' => 'Booking successful',
             'booking' => $booking
         ]);

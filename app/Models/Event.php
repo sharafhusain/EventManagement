@@ -28,4 +28,8 @@ class Event extends Model
     {
         return $this->belongsTo(Venue::class);
     }
+    public function available_seat()
+    {
+        return $this->total_seats - $this->bookings()->sum('seats_booked') ;
+    }
 }
