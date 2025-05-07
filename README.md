@@ -93,5 +93,3 @@ npm run dev
 Visit [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser to view the application.
 
 ---
-
-Let me know if you'd like to include login credentials for testing or Docker setup instructions.
