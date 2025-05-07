@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
+use App\Models\Event;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -27,7 +29,23 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        return $request->all();
+        $request->validate([
+            'event_id' => 'required|exists:events,id',
+            'seats' => 'required|integer|min:1',
+        ]);
+        $event = Event::find($request->event_id);
+        $booking = Booking::create([
+            'user_id' => auth()->id(),
+            'event_id' => $request->event_id,
+            'seats_booked' => $request->seats,
+            'total_price' => $event->price_per_seat * $request->seats,
+            'payment_status' => 'paid', // setting this untill payment functionality is implemented
+            'booked_at' => now(),
+        ]);
+        return response()->json([
+            'message' => 'Booking successful',
+            'booking' => $booking
+        ]);
     }
 
     /**
