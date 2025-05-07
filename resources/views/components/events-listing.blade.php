@@ -138,7 +138,7 @@
             console.log(seats,'seats');
             
 
-            fetch("{{route('event.create')}}", {
+            fetch("{{route('user.event.create')}}", {
                     method: 'POST',
                     body: formData,
                     headers: {

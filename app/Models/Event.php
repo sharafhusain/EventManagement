@@ -32,4 +32,8 @@ class Event extends Model
     {
         return $this->total_seats - $this->bookings()->sum('seats_booked') ;
     }
+    public function getDateAttribute()
+{
+    return $this->created_at->format('d M Y');
+}
 }
